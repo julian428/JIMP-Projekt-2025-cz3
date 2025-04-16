@@ -1,4 +1,5 @@
 import javax.swing.*;
+import java.io.File;
 
 public class MainFrame extends JFrame {
 	public MainFrame(){
@@ -30,7 +31,9 @@ public class MainFrame extends JFrame {
 		menuBar.add(help);
 		setJMenuBar(menuBar);
 
-		loadGraph.addActionListener(e -> JOptionPane.showMessageDialog(this, "Wybór pliku .txt lub .dot"));
+		loadGraph.addActionListener(e -> {
+			File selectedFile = Utils.fileDialog(this, "txt", "dot", "csrrg");
+		});
 		saveGraph.addActionListener(e -> JOptionPane.showMessageDialog(this, "Wybór miejsca zapisu i nazwy zdjęcia grafu."));
 		help.addActionListener(e -> Utils.openWebsite(this,"https://github.com/julian428/JIMP-Projekt-2025-cz3"));
 	}
