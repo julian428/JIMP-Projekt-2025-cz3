@@ -2,15 +2,15 @@ import javax.swing.*;
 import java.io.File;
 
 public class MainFrame extends JFrame {
+	private DrawGraph graph;
 	public MainFrame(){
 		setTitle("Wizualizacja grafu");
 		setSize(800, 600);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setLocationRelativeTo(null);
 
-		JLabel label = new JLabel("Hello, world!");
-		label.setHorizontalAlignment(SwingConstants.CENTER);
-		add(label);
+		this.graph = new DrawGraph();
+		add(graph, SwingConstants.CENTER);
 
 		createMenuBar();
 	}
@@ -32,7 +32,9 @@ public class MainFrame extends JFrame {
 		setJMenuBar(menuBar);
 
 		loadGraph.addActionListener(e -> {
-			File selectedFile = Utils.fileDialog(this, "txt", "dot", "csrrg");
+			File selectedFile = Utils.fileDialog(this, "txt", "dot", "csrrg", "clusters");
+			if(selectedFile == null) return;
+			graph.setGraph(this, selectedFile);
 		});
 		saveGraph.addActionListener(e -> JOptionPane.showMessageDialog(this, "Wybór miejsca zapisu i nazwy zdjęcia grafu."));
 		help.addActionListener(e -> Utils.openWebsite(this,"https://github.com/julian428/JIMP-Projekt-2025-cz3"));
