@@ -29,4 +29,10 @@ public class Utils {
 			return null;
 		}
 	}
+
+	public static String getFileExtension(File file){
+		String name = file.getName();
+		int dotIndex = name.lastIndexOf(".");
+		return (dotIndex == -1) ? "" : name.substring(dotIndex + 1);
+	}
 }
