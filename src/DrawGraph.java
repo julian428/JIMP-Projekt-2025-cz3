@@ -10,6 +10,7 @@ public class DrawGraph extends JPanel {
 	private class Node {
 		public int id;
 		public int clusterId;
+
 		public Node(int id, int clusterId){
 			this.id = id;
 			this.clusterId = clusterId;
@@ -24,13 +25,21 @@ public class DrawGraph extends JPanel {
 	private class Edge {
 		public int originId;
 		public int destinationId;
+
 		public Edge(int originId, int destinationId){
 			this.originId = originId;
 			this.destinationId = destinationId;
 		}
+
+		@Override
+		public String toString() {
+			return this.originId + " -> " + this.destinationId;
+		}
 	}
 
 	private List<Node> nodes = new ArrayList<>();
+	private List<Edge> edges = new ArrayList<>();
+
 	private int nodeCount = 0;
 	private int clusterCount = 0;
 	private int clusterSize = 0;
@@ -40,10 +49,14 @@ public class DrawGraph extends JPanel {
 	public void setGraph(Component parent, File file){
 		this.parent = parent;
 		String fileExtension = Utils.getFileExtension(file);
+		this.nodes.clear();
 
 		switch(fileExtension){
 			case "clusters":
 				parseClustersFile(file);
+				break;
+			case "dot":
+				parseDotFile(file);
 				break;
 			default:
 				JOptionPane.showMessageDialog(parent, "Jeszcze nie zaimplementowano rysowania grafu z pliku " + fileExtension);
@@ -69,6 +82,42 @@ public class DrawGraph extends JPanel {
 					this.nodes.add(new Node(nodeId, i));
 				}
 			}
+		}catch(IOException e){
+			e.printStackTrace();
+		}
+	}
+
+	private void parseDotFile(File file){
+		try(BufferedReader reader = new BufferedReader(new FileReader(file))){
+			reader.readLine(); // omijam pierwszą linijke
+
+			String firstLine;
+			for(int i = 0;; i++){
+				firstLine = reader.readLine();
+				boolean isClusterDeclarationLine = firstLine.trim().startsWith("subgraph cluster_");
+				if(!isClusterDeclarationLine){
+					this.clusterCount = i;
+					break;
+				}
+				reader.readLine(); // omijam nazwe regionu
+				reader.readLine(); // omijam styl regionu
+				reader.readLine(); // omijam kolor regionu
+				reader.readLine(); // omijam styl wierzchołków
+				String[] nodeTokens = reader.readLine().trim().replace(";", "").split(" ");
+				reader.readLine(); // omijam linijke zamykającą region
+				for(String n : nodeTokens){
+					this.nodes.add(new Node(Integer.parseInt(n), i));
+					this.nodeCount++;
+				}
+			}
+
+			do{
+				String[] connection = firstLine.trim().replace(";", "").split(" -> ");
+				int from = Integer.parseInt(connection[0]);
+				int to = Integer.parseInt(connection[1]);
+				this.edges.add(new Edge(from, to));
+			}while((firstLine = reader.readLine()) != null && !firstLine.trim().equals("}"));
+
 		}catch(IOException e){
 			e.printStackTrace();
 		}
