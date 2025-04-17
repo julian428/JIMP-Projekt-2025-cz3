@@ -53,6 +53,7 @@ public class DrawGraph extends JPanel {
 	}
 
 	private void parseClustersFile(File file){
+		this.nodes.clear();
 		try(BufferedReader reader = new BufferedReader(new FileReader(file))){
 			String header = reader.readLine();
 			String[] tokens = header.trim().split(" ");
@@ -73,6 +74,8 @@ public class DrawGraph extends JPanel {
 			e.printStackTrace();
 		}
 	}
+
+	private void parseDotFile(File file){}
 
 	@Override
 	protected void paintComponent(Graphics g){
