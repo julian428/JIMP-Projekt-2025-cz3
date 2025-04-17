@@ -40,6 +40,7 @@ public class DrawGraph extends JPanel {
 	public void setGraph(Component parent, File file){
 		this.parent = parent;
 		String fileExtension = Utils.getFileExtension(file);
+		this.nodes.clear();
 
 		switch(fileExtension){
 			case "clusters":
@@ -53,7 +54,6 @@ public class DrawGraph extends JPanel {
 	}
 
 	private void parseClustersFile(File file){
-		this.nodes.clear();
 		try(BufferedReader reader = new BufferedReader(new FileReader(file))){
 			String header = reader.readLine();
 			String[] tokens = header.trim().split(" ");
