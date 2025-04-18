@@ -10,7 +10,8 @@ public class MainFrame extends JFrame {
 		setLocationRelativeTo(null);
 
 		this.graph = new DrawGraph();
-		add(graph, SwingConstants.CENTER);
+		JScrollPane scrollPane = new JScrollPane(this.graph);
+		add(scrollPane, SwingConstants.CENTER);
 
 		createMenuBar();
 	}
