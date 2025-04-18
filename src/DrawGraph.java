@@ -7,21 +7,6 @@ import java.util.Map;
 import java.util.HashMap;
 
 public class DrawGraph extends JPanel {
-	private class Node {
-		public int id;
-		public int clusterId;
-
-		public Node(int id, int clusterId){
-			this.id = id;
-			this.clusterId = clusterId;
-		}
-
-		@Override
-		public String toString(){
-			return this.id + "@" + this.clusterId;
-		}
-	}
-
 	private class Edge {
 		public int originId;
 		public int destinationId;
@@ -41,10 +26,15 @@ public class DrawGraph extends JPanel {
 	private List<Edge> edges = new ArrayList<>();
 
 	private int nodeCount = 0;
+	private int edgeCount = 0;
 	private int clusterCount = 0;
 	private int clusterSize = 0;
 	private double sizeDeltaPercentage = 0.0;
 	private Component parent;
+
+	public DrawGraph() {
+    setPreferredSize(new Dimension(20000, 20000));
+  }
 
 	public void setGraph(Component parent, File file){
 		this.parent = parent;
@@ -54,9 +44,6 @@ public class DrawGraph extends JPanel {
 		switch(fileExtension){
 			case "clusters":
 				parseClustersFile(file);
-				break;
-			case "dot":
-				parseDotFile(file);
 				break;
 			default:
 				JOptionPane.showMessageDialog(parent, "Jeszcze nie zaimplementowano rysowania grafu z pliku " + fileExtension);
@@ -70,54 +57,26 @@ public class DrawGraph extends JPanel {
 			String header = reader.readLine();
 			String[] tokens = header.trim().split(" ");
 			this.nodeCount = Integer.parseInt(tokens[0].trim().split(":")[1]);
-			this.clusterCount = Integer.parseInt(tokens[1].trim().split(":")[1]);
-			this.clusterSize = Integer.parseInt(tokens[3].trim().split(":")[1]);
-			this.sizeDeltaPercentage = Double.parseDouble(tokens[2].trim().split(":")[1]);
+			this.edgeCount = Integer.parseInt(tokens[1].trim().split(":")[1]);
+			this.clusterCount = Integer.parseInt(tokens[2].trim().split(":")[1]);
+			this.clusterSize = Integer.parseInt(tokens[4].trim().split(":")[1]);
+			this.sizeDeltaPercentage = Double.parseDouble(tokens[3].trim().split(":")[1]);
 
 			String line;
 			for(int i = 0; i < clusterCount && (line = reader.readLine()) != null; i++){
 				String[] nodeTokens = line.trim().split(" ");
 				for(String n : nodeTokens){
-					int nodeId = Integer.parseInt(n);
-					this.nodes.add(new Node(nodeId, i));
+					String nodeInfo = n.trim().split("@")[0];
+					String nodePosition = n.trim().split("@")[1];
+
+					int nodeId = Integer.parseInt(nodeInfo.split(";")[0]);
+					int nodeCluster = Integer.parseInt(nodeInfo.split(";")[1]);
+					double nodeX = Math.round((Double.parseDouble(nodePosition.split(";")[0]) + 1) *10000);
+					double nodeY = Math.round((Double.parseDouble(nodePosition.split(";")[1]) + 1) *10000);
+					System.out.println(nodeId + "@" + nodeX + ";" + nodeY);
+					this.nodes.add(new Node(nodeId, nodeCluster, (int)nodeX, (int)nodeY));
 				}
 			}
-		}catch(IOException e){
-			e.printStackTrace();
-		}
-	}
-
-	private void parseDotFile(File file){
-		try(BufferedReader reader = new BufferedReader(new FileReader(file))){
-			reader.readLine(); // omijam pierwszą linijke
-
-			String firstLine;
-			for(int i = 0;; i++){
-				firstLine = reader.readLine();
-				boolean isClusterDeclarationLine = firstLine.trim().startsWith("subgraph cluster_");
-				if(!isClusterDeclarationLine){
-					this.clusterCount = i;
-					break;
-				}
-				reader.readLine(); // omijam nazwe regionu
-				reader.readLine(); // omijam styl regionu
-				reader.readLine(); // omijam kolor regionu
-				reader.readLine(); // omijam styl wierzchołków
-				String[] nodeTokens = reader.readLine().trim().replace(";", "").split(" ");
-				reader.readLine(); // omijam linijke zamykającą region
-				for(String n : nodeTokens){
-					this.nodes.add(new Node(Integer.parseInt(n), i));
-					this.nodeCount++;
-				}
-			}
-
-			do{
-				String[] connection = firstLine.trim().replace(";", "").split(" -> ");
-				int from = Integer.parseInt(connection[0]);
-				int to = Integer.parseInt(connection[1]);
-				this.edges.add(new Edge(from, to));
-			}while((firstLine = reader.readLine()) != null && !firstLine.trim().equals("}"));
-
 		}catch(IOException e){
 			e.printStackTrace();
 		}
@@ -138,40 +97,15 @@ public class DrawGraph extends JPanel {
 
 		if(clusterMap.size() < 1) return;
 
-		int clusterCount = clusterMap.size();
-    int regionWidth = width / clusterCount;
-  	int radius = 30;
-    int padding = 20;
-
 		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-		Color[] colors = {Color.BLUE, Color.GREEN, Color.ORANGE, Color.MAGENTA};
 		int i = 0;
     for (int clusterId : clusterMap.keySet()) {
 			List<Node> clusterNodes = clusterMap.get(clusterId);
-      Color color = colors[clusterId % colors.length];
-
-			int cols = (int)Math.ceil(Math.sqrt(clusterNodes.size()));
-			int spacing = radius * 2 + padding;
-
 			for(int j = 0; j < clusterNodes.size(); j++){
-				int row = j / cols;
-        int col = j % cols;
-
-        int x = i * regionWidth + col * spacing + padding;
-        int y = row * spacing + padding;
-
-     		drawNode(g2, clusterNodes.get(j), color, x, y, radius);
+				clusterNodes.get(j).drawNode(g2);
 			}
 			i++;
     }
-	}
-
-	private void drawNode(Graphics2D g, Node n, Color color, int x, int y, int radius){
-		g.setColor(color);
-		g.fillOval(x, y, radius, radius);
-
-		g.setColor(Color.WHITE);
-		g.drawString(String.valueOf(n.id), x + radius / 3, y + radius / 2);
 	}
 }
