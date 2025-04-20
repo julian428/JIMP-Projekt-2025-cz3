@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Arrays;
 
 public class DrawGraph extends JPanel {
 	private class Edge {
@@ -22,24 +23,27 @@ public class DrawGraph extends JPanel {
 		}
 	}
 
-	private List<Node> nodes = new ArrayList<>();
+	private Map<Integer, Node> nodes = new HashMap<>();
 	private List<Edge> edges = new ArrayList<>();
 
 	private int nodeCount = 0;
 	private int edgeCount = 0;
 	private int clusterCount = 0;
 	private int clusterSize = 0;
+	private int maxClusterSize = 0;
+	private int clustersPerRow = 0;
 	private double sizeDeltaPercentage = 0.0;
 	private Component parent;
 
-	public DrawGraph() {
-    setPreferredSize(new Dimension(20000, 20000));
-  }
+	public DrawGraph(){
+    setPreferredSize(new Dimension(1000, 1000));
+	}
 
 	public void setGraph(Component parent, File file){
 		this.parent = parent;
 		String fileExtension = Utils.getFileExtension(file);
 		this.nodes.clear();
+		this.edges.clear();
 
 		switch(fileExtension){
 			case "clusters":
@@ -47,7 +51,13 @@ public class DrawGraph extends JPanel {
 				break;
 			default:
 				JOptionPane.showMessageDialog(parent, "Jeszcze nie zaimplementowano rysowania grafu z pliku " + fileExtension);
+				return;
 		}
+
+		maxClusterSize = (int)Math.ceil(this.clusterSize * (1 + this.sizeDeltaPercentage / 100));
+		clustersPerRow = (int)Math.ceil(Math.sqrt(this.clusterCount));
+		int sideLength = (int)(50 * maxClusterSize * clustersPerRow) + clustersPerRow * 50;
+    setPreferredSize(new Dimension(sideLength, sideLength));
 
 		repaint();
 	}
@@ -71,11 +81,17 @@ public class DrawGraph extends JPanel {
 
 					int nodeId = Integer.parseInt(nodeInfo.split(";")[0]);
 					int nodeCluster = Integer.parseInt(nodeInfo.split(";")[1]);
-					double nodeX = Math.round((Double.parseDouble(nodePosition.split(";")[0]) + 1) *10000);
-					double nodeY = Math.round((Double.parseDouble(nodePosition.split(";")[1]) + 1) *10000);
-					System.out.println(nodeId + "@" + nodeX + ";" + nodeY);
-					this.nodes.add(new Node(nodeId, nodeCluster, (int)nodeX, (int)nodeY));
+					double nodeX = (Double.parseDouble(nodePosition.split(";")[0]) + 1)/2;
+					double nodeY = (Double.parseDouble(nodePosition.split(";")[1]) + 1)/2;
+					this.nodes.put(nodeId, new Node(nodeId, nodeCluster, nodeX, nodeY));
 				}
+			}
+
+			for(int i = 0; i < edgeCount && (line = reader.readLine()) != null; i++){
+				String[] connection = line.trim().split(" -> ");
+				int from = Integer.parseInt(connection[0]);
+				int to = Integer.parseInt(connection[1]);
+				edges.add(new Edge(from, to));
 			}
 		}catch(IOException e){
 			e.printStackTrace();
@@ -85,27 +101,63 @@ public class DrawGraph extends JPanel {
 	@Override
 	protected void paintComponent(Graphics g){
 		super.paintComponent(g);
+
 		Graphics2D g2 = (Graphics2D)g;
+		int clusterWidth = maxClusterSize * 50;
 
-		int width = getWidth();
-		int height = getHeight();
-
-		Map<Integer, List<Node>> clusterMap = new HashMap<>();
-    for (Node node : nodes) {
-      clusterMap.computeIfAbsent(node.clusterId, k -> new ArrayList<>()).add(node);
-    }
-
-		if(clusterMap.size() < 1) return;
+		if(this.nodes.size() < 1) return;
 
 		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-		int i = 0;
-    for (int clusterId : clusterMap.keySet()) {
-			List<Node> clusterNodes = clusterMap.get(clusterId);
-			for(int j = 0; j < clusterNodes.size(); j++){
-				clusterNodes.get(j).drawNode(g2);
-			}
-			i++;
+		//normalizuje klastry
+		double[] minX = new double[this.clusterCount];
+		Arrays.fill(minX, 1);
+		double[] maxX = new double[this.clusterCount];
+		double[] minY = new double[this.clusterCount];
+		Arrays.fill(minY, 1);
+		double[] maxY = new double[this.clusterCount];
+		for(Node node : this.nodes.values()){
+			int c = node.clusterId;
+			if (node.x < minX[c]) minX[c] = node.x;
+    	if (node.x > maxX[c]) maxX[c] = node.x;
+    	if (node.y < minY[c]) minY[c] = node.y;
+    	if (node.y > maxY[c]) maxY[c] = node.y;
+		}
+
+		// rysowanie wierzchołków
+    for(Node node : this.nodes.values()) {
+			int c = node.clusterId;
+			int row = c % clustersPerRow;
+			int col = c / clustersPerRow;
+
+			int originX = node.clusterId % clustersPerRow * clusterWidth + row * 50;
+			int originY = node.clusterId / clustersPerRow * clusterWidth + col * 50;
+			
+			double normX = (node.x - minX[c]) / (maxX[c] - minX[c]);
+    	double normY = (node.y - minY[c]) / (maxY[c] - minY[c]);
+
+			int localX = (int)Math.round(clusterWidth * normX);
+			int localY = (int)Math.round(clusterWidth * normY);
+
+			node.absoluteX = originX + localX;
+			node.absoluteY = originY + localY;
     }
+
+		for(Edge edge : edges){
+			Node from = this.nodes.get(edge.originId);
+			Node to = this.nodes.get(edge.destinationId);
+
+			if(from.clusterId == to.clusterId){
+				g2.setColor(Color.GRAY);
+			}
+			else{
+				g2.setColor(Color.RED);
+			}
+
+			g2.drawLine(from.absoluteX + 15, from.absoluteY + 15, to.absoluteX + 15, to.absoluteY + 15);
+		}
+
+		// rysowanie wierzchołków
+		for(Node node : this.nodes.values()) node.drawNode(g2);
 	}
 }
