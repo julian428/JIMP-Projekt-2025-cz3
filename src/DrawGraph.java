@@ -49,6 +49,9 @@ public class DrawGraph extends JPanel {
 			case "clusters":
 				parseClustersFile(file);
 				break;
+			case "csrrg":
+				generateGraph(file);
+				break;
 			default:
 				JOptionPane.showMessageDialog(parent, "Jeszcze nie zaimplementowano rysowania grafu z pliku " + fileExtension);
 				return;
@@ -60,6 +63,43 @@ public class DrawGraph extends JPanel {
     setPreferredSize(new Dimension(sideLength, sideLength));
 
 		repaint();
+	}
+
+	private void generateGraph(File file){
+		JTextField clusterCountField = new JTextField();
+    JTextField marginField = new JTextField();
+
+    JPanel panel = new JPanel(new GridLayout(0, 1));
+    panel.add(new JLabel("Ilość klastrów:"));
+    panel.add(clusterCountField);
+    panel.add(new JLabel("Margines róznicy rozmiaru klastrów (%):"));
+    panel.add(marginField);
+
+    int result = JOptionPane.showConfirmDialog(null, panel, "Ustaw parametry podziału",
+        JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+
+    if (result == JOptionPane.OK_OPTION) {
+        try {
+            int clusterCount = Integer.parseInt(clusterCountField.getText().trim());
+            double margin = Double.parseDouble(marginField.getText().trim());
+
+            runGraphGenerator(file, clusterCount, margin);
+
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(null, "Podane liczby nie są poprawne.");
+						generateGraph(file);
+        }
+    }
+	}
+
+	private void runGraphGenerator(File file, int clusterCount, double margin){
+		String path = file.getAbsolutePath();
+		ProcessBuilder pb = new ProcessBuilder(
+      "./JIMP-Projekt-2025-cz2/bin/divide_graph",
+      "-i", path,
+      "-c", String.valueOf(clusterCount),
+			"-p", String.valueOf(margin)
+        );
 	}
 
 	private void parseClustersFile(File file){
