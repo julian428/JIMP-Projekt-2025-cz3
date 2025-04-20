@@ -9,13 +9,15 @@ import java.util.HashMap;
 public class Node {
 	public int id;
 	public int clusterId;
-	public int x = 0;
-	public int y = 0;
+	public double x = 0;
+	public double y = 0;
+	public int absoluteX = 0;
+	public int absoluteY = 0;
 
 	private int radius = 30;
 	private Color color = Color.BLACK;
 
-	public Node(int id, int clusterId, int x, int y){
+	public Node(int id, int clusterId, double x, double y){
 		this.id = id;
 		this.clusterId = clusterId;
 		this.x = x;
@@ -31,10 +33,10 @@ public class Node {
 
 	public void drawNode(Graphics2D g){
 		g.setColor(color);
-		g.fillOval(x, y, radius, radius);
+		g.fillOval(this.absoluteX, this.absoluteY, radius, radius);
 
 		g.setColor(Color.BLACK);
-		g.drawString(String.valueOf(this.id), x + radius / 3, y + radius / 2);
+		g.drawString(String.valueOf(this.id), this.absoluteX + radius / 3, this.absoluteY + radius / 2);
 	}
 }
 
