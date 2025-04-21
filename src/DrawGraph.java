@@ -40,6 +40,7 @@ public class DrawGraph extends JPanel {
 	private boolean showOutsideConnections = true;
 	private boolean showInConnectionsCount = false;
 	private boolean showOutConnectionsCount = false;
+	private boolean showClusterBorders = false;
 
 	public DrawGraph(){
     setPreferredSize(new Dimension(1000, 1000));
@@ -62,6 +63,11 @@ public class DrawGraph extends JPanel {
 
 	public void changeOutConnectionsCount(){
 		this.showOutConnectionsCount = !this.showOutConnectionsCount;
+		repaint();
+	}
+
+	public void changeBorderVisibility(){
+		this.showClusterBorders = !this.showClusterBorders;
 		repaint();
 	}
 
@@ -213,8 +219,8 @@ public class DrawGraph extends JPanel {
 			int row = c % clustersPerRow;
 			int col = c / clustersPerRow;
 
-			int originX = node.clusterId % clustersPerRow * clusterWidth + row * 50;
-			int originY = node.clusterId / clustersPerRow * clusterWidth + col * 50;
+			int originX = row * clusterWidth + row * 50;
+			int originY = col * clusterWidth + col * 50;
 			
 			double normX = (node.x - minX[c]) / (maxX[c] - minX[c]);
     	double normY = (node.y - minY[c]) / (maxY[c] - minY[c]);
@@ -225,6 +231,26 @@ public class DrawGraph extends JPanel {
 			node.absoluteX = originX + localX;
 			node.absoluteY = originY + localY;
     }
+
+		// rysowanie granic klastrów
+		if(this.showClusterBorders){
+			for(int i = 0; i < this.clusterCount; i++){
+				int row = i % clustersPerRow;
+				int col = i / clustersPerRow;
+				
+				int startX = row * clusterWidth + row * 50;
+				int startY = col * clusterWidth + col * 50;
+
+				int endX = startX + clusterWidth + 50;
+				int endY = startY + clusterWidth + 50;
+
+				g2.setColor(Color.BLACK);
+				g2.drawLine(startX, startY, endX, startY);
+				g2.drawLine(startX, startY, startX, endY);
+				g2.drawLine(endX, startY, endX, endY);
+				g2.drawLine(startX, endY, endX, endY);
+			}
+		}
 
 		for(Edge edge : edges){
 			Node from = this.nodes.get(edge.originId);

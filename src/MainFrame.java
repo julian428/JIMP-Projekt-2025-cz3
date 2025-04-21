@@ -32,6 +32,8 @@ public class MainFrame extends JFrame {
 		JCheckBoxMenuItem clusterBorders = new JCheckBoxMenuItem("granice klastrów");
 		JCheckBoxMenuItem insideConnectionsCount = new JCheckBoxMenuItem("ilość wewnętrznych połączeń");
 		JCheckBoxMenuItem outsideConnectionsCount = new JCheckBoxMenuItem("ilość wychodzących połączeń");
+		JCheckBoxMenuItem absoluteOutsideConnectionsCount = new JCheckBoxMenuItem("ilość wychodzących połączeń clastra");
+		JCheckBoxMenuItem absoluteInsideConnectionsCount = new JCheckBoxMenuItem("ilość wewnętrznych połączeń klastra");
 
 		insideConnections.setSelected(true);
 		outsideConnections.setSelected(true);
@@ -60,6 +62,7 @@ public class MainFrame extends JFrame {
 		outsideConnections.addActionListener(e -> graph.changeOutsideConnectionsVisibility());
 		insideConnectionsCount.addActionListener(e -> graph.changeInConnectionsCount());
 		outsideConnectionsCount.addActionListener(e -> graph.changeOutConnectionsCount());
+		clusterBorders.addActionListener(e -> graph.changeBorderVisibility());
 
 		help.addActionListener(e -> Utils.openWebsite(this,"https://github.com/julian428/JIMP-Projekt-2025-cz3"));
 	}
