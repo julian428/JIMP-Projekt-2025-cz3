@@ -33,10 +33,36 @@ public class DrawGraph extends JPanel {
 	private int maxClusterSize = 0;
 	private int clustersPerRow = 0;
 	private double sizeDeltaPercentage = 0.0;
+
 	private Component parent;
+
+	private boolean showInsideConnections = true;
+	private boolean showOutsideConnections = true;
+	private boolean showInConnectionsCount = false;
+	private boolean showOutConnectionsCount = false;
 
 	public DrawGraph(){
     setPreferredSize(new Dimension(1000, 1000));
+	}
+
+	public void changeInsideConnectionsVisibility(){
+		this.showInsideConnections = !this.showInsideConnections;
+		repaint();
+	}
+	
+	public void changeOutsideConnectionsVisibility(){
+		this.showOutsideConnections = !this.showOutsideConnections;
+		repaint();
+	}
+
+	public void changeInConnectionsCount(){
+		this.showInConnectionsCount = !this.showInConnectionsCount;
+		repaint();
+	}
+
+	public void changeOutConnectionsCount(){
+		this.showOutConnectionsCount = !this.showOutConnectionsCount;
+		repaint();
 	}
 
 	public void setGraph(Component parent, File file){
@@ -94,12 +120,28 @@ public class DrawGraph extends JPanel {
 
 	private void runGraphGenerator(File file, int clusterCount, double margin){
 		String path = file.getAbsolutePath();
-		ProcessBuilder pb = new ProcessBuilder(
-      "./JIMP-Projekt-2025-cz2/bin/divide_graph",
-      "-i", path,
-      "-c", String.valueOf(clusterCount),
-			"-p", String.valueOf(margin)
-        );
+		try {
+			ProcessBuilder pb = new ProcessBuilder(
+      	"./JIMP-Projekt-2025-cz2/bin/divide_graph",
+      	"-i", path,
+      	"-c", String.valueOf(clusterCount),
+				"-p", String.valueOf(margin)
+      );
+			Process process = pb.start();
+			
+
+			int exitCode = process.waitFor();
+      if (exitCode == 0) {
+				File output = new File("clusters.clusters");
+				parseClustersFile(output);
+      } else {
+        JOptionPane.showMessageDialog(null, "Nie udało się wygenerować grafu.");
+      }
+		} catch(IOException | InterruptedException ex) {
+			ex.printStackTrace();
+      JOptionPane.showMessageDialog(null, "Błąd przy uruchamianiu programu.");
+		}
+		
 	}
 
 	private void parseClustersFile(File file){
@@ -166,6 +208,7 @@ public class DrawGraph extends JPanel {
 
 		// rysowanie wierzchołków
     for(Node node : this.nodes.values()) {
+			node.clearConnectionsCount();
 			int c = node.clusterId;
 			int row = c % clustersPerRow;
 			int col = c / clustersPerRow;
@@ -186,18 +229,32 @@ public class DrawGraph extends JPanel {
 		for(Edge edge : edges){
 			Node from = this.nodes.get(edge.originId);
 			Node to = this.nodes.get(edge.destinationId);
+			boolean fromSameCluster = from.clusterId == to.clusterId;
+			
+			// update ilosć połączeń
+			if(fromSameCluster){
+				from.inConnections++;
+				to.inConnections++;
+			}else{
+				from.outConnections++;
+				to.outConnections++;
+			}
 
-			if(from.clusterId == to.clusterId){
+			if(fromSameCluster && this.showInsideConnections){
 				g2.setColor(Color.GRAY);
+				g2.drawLine(from.absoluteX + 15, from.absoluteY + 15, to.absoluteX + 15, to.absoluteY + 15);
 			}
-			else{
+			else if(!fromSameCluster && this.showOutsideConnections){
 				g2.setColor(Color.RED);
+				g2.drawLine(from.absoluteX + 15, from.absoluteY + 15, to.absoluteX + 15, to.absoluteY + 15);
 			}
-
-			g2.drawLine(from.absoluteX + 15, from.absoluteY + 15, to.absoluteX + 15, to.absoluteY + 15);
 		}
 
 		// rysowanie wierzchołków
-		for(Node node : this.nodes.values()) node.drawNode(g2);
+		for(Node node : this.nodes.values()){
+			node.drawNode(g2);
+			if(this.showInConnectionsCount) node.drawInConnectionsCount(g2);
+			if(this.showOutConnectionsCount) node.drawOutConnectionsCount(g2);
+		}
 	}
 }

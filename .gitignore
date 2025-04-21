@@ -1,2 +1,4 @@
 *.class
 JIMP-Projekt-2025-cz2
+*.clusters
+output.txt

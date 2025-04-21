@@ -14,6 +14,9 @@ public class Node {
 	public int absoluteX = 0;
 	public int absoluteY = 0;
 
+	public int outConnections = 0;
+	public int inConnections = 0;
+
 	private int radius = 30;
 	private Color color = Color.BLACK;
 
@@ -37,6 +40,21 @@ public class Node {
 
 		g.setColor(Color.BLACK);
 		g.drawString(String.valueOf(this.id), this.absoluteX + radius / 3, this.absoluteY + radius / 2);
+	}
+
+	public void drawOutConnectionsCount(Graphics2D g){
+		g.setColor(Color.RED);
+		g.drawString(String.valueOf(this.outConnections), this.absoluteX + this.radius, this.absoluteY + this.radius + 10);
+	}
+
+	public void drawInConnectionsCount(Graphics2D g){
+		g.setColor(Color.BLACK);
+		g.drawString(String.valueOf(this.inConnections), this.absoluteX, this.absoluteY + this.radius + 10);
+	}
+
+	public void clearConnectionsCount(){
+		this.inConnections = 0;
+		this.outConnections = 0;
 	}
 }
 
