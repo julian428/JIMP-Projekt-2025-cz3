@@ -11,7 +11,8 @@ public class MainFrame extends JFrame {
 
 		this.graph = new DrawGraph();
 		JScrollPane scrollPane = new JScrollPane(this.graph);
-		add(scrollPane, SwingConstants.CENTER);
+		new MouseDragScroller(this.graph, scrollPane);
+		add(scrollPane);
 
 		createMenuBar();
 	}
