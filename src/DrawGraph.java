@@ -41,6 +41,8 @@ public class DrawGraph extends JPanel {
 	private boolean showInConnectionsCount = false;
 	private boolean showOutConnectionsCount = false;
 	private boolean showClusterBorders = false;
+	private boolean showClusterBilans = false;
+	private boolean showLostNodesCount = false;
 
 	public DrawGraph(){
     setPreferredSize(new Dimension(1000, 1000));
@@ -68,6 +70,16 @@ public class DrawGraph extends JPanel {
 
 	public void changeBorderVisibility(){
 		this.showClusterBorders = !this.showClusterBorders;
+		repaint();
+	}
+
+	public void changeClusterBilansVisibility(){
+		this.showClusterBilans = !this.showClusterBilans;
+		repaint();
+	}
+
+	public void changeLostNodesCountVisibility(){
+		this.showLostNodesCount = !this.showLostNodesCount;
 		repaint();
 	}
 
@@ -232,26 +244,8 @@ public class DrawGraph extends JPanel {
 			node.absoluteY = originY + localY;
     }
 
-		// rysowanie granic klastrów
-		if(this.showClusterBorders){
-			for(int i = 0; i < this.clusterCount; i++){
-				int row = i % clustersPerRow;
-				int col = i / clustersPerRow;
-				
-				int startX = row * clusterWidth + row * 50;
-				int startY = col * clusterWidth + col * 50;
-
-				int endX = startX + clusterWidth + 50;
-				int endY = startY + clusterWidth + 50;
-
-				g2.setColor(Color.BLACK);
-				g2.drawLine(startX, startY, endX, startY);
-				g2.drawLine(startX, startY, startX, endY);
-				g2.drawLine(endX, startY, endX, endY);
-				g2.drawLine(startX, endY, endX, endY);
-			}
-		}
-
+		int[] clusterOutConnections = new int[this.clusterCount];
+		int[] clusterInConnections = new int[this.clusterCount];
 		for(Edge edge : edges){
 			Node from = this.nodes.get(edge.originId);
 			Node to = this.nodes.get(edge.destinationId);
@@ -261,9 +255,12 @@ public class DrawGraph extends JPanel {
 			if(fromSameCluster){
 				from.inConnections++;
 				to.inConnections++;
+				clusterInConnections[from.clusterId] += 2;
 			}else{
 				from.outConnections++;
 				to.outConnections++;
+				clusterOutConnections[from.clusterId]++;
+				clusterOutConnections[to.clusterId]++;
 			}
 
 			if(fromSameCluster && this.showInsideConnections){
@@ -276,11 +273,43 @@ public class DrawGraph extends JPanel {
 			}
 		}
 
+		
+
 		// rysowanie wierzchołków
+		int[] lostNodesCount = new int[this.clusterCount]; // ilość wierzchołków które mają więcej połączeń poza swój własny klaster.
 		for(Node node : this.nodes.values()){
 			node.drawNode(g2);
+			if(node.inConnections < node.outConnections) lostNodesCount[node.clusterId]++;
 			if(this.showInConnectionsCount) node.drawInConnectionsCount(g2);
 			if(this.showOutConnectionsCount) node.drawOutConnectionsCount(g2);
+		}
+
+		// rysowanie granic klastrów is bilansu połączeń
+		for(int i = 0; i < this.clusterCount; i++){
+			int row = i % clustersPerRow;
+			int col = i / clustersPerRow;
+				
+			int startX = row * clusterWidth + row * 50;
+			int startY = col * clusterWidth + col * 50;
+
+			int endX = startX + clusterWidth + 50;
+			int endY = startY + clusterWidth + 50;
+
+			g2.setColor(Color.BLACK);
+			if(this.showClusterBorders){
+				g2.drawLine(startX, startY, endX, startY);
+				g2.drawLine(startX, startY, startX, endY);
+				g2.drawLine(endX, startY, endX, endY);
+				g2.drawLine(startX, endY, endX, endY);
+			}
+			if(this.showClusterBilans){
+				g2.drawString("wewnętrzne połączenia: " + clusterInConnections[i], startX + (endX - startX) / 2 - 100, startY + 15);
+				g2.setColor(Color.RED);
+				g2.drawString("zewnętrzne połączenia: " + clusterOutConnections[i], startX + (endX - startX) / 2 - 100, startY + 30);
+			}
+			if(this.showLostNodesCount){
+				g2.drawString("błędne wierzchołki: " + lostNodesCount[i], startX + (endX - startX) / 2 - 100, startY + 45);
+			}
 		}
 	}
 }

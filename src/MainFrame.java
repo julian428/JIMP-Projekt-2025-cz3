@@ -32,8 +32,8 @@ public class MainFrame extends JFrame {
 		JCheckBoxMenuItem clusterBorders = new JCheckBoxMenuItem("granice klastrów");
 		JCheckBoxMenuItem insideConnectionsCount = new JCheckBoxMenuItem("ilość wewnętrznych połączeń");
 		JCheckBoxMenuItem outsideConnectionsCount = new JCheckBoxMenuItem("ilość wychodzących połączeń");
-		JCheckBoxMenuItem absoluteOutsideConnectionsCount = new JCheckBoxMenuItem("ilość wychodzących połączeń clastra");
-		JCheckBoxMenuItem absoluteInsideConnectionsCount = new JCheckBoxMenuItem("ilość wewnętrznych połączeń klastra");
+		JCheckBoxMenuItem clusterBilans = new JCheckBoxMenuItem("bilans połączeń klastra");
+		JCheckBoxMenuItem lostNodesCount = new JCheckBoxMenuItem("ilość błędnych wierzchołków");
 
 		insideConnections.setSelected(true);
 		outsideConnections.setSelected(true);
@@ -43,6 +43,8 @@ public class MainFrame extends JFrame {
 		optionsMenu.add(insideConnectionsCount);
 		optionsMenu.add(outsideConnectionsCount);
 		optionsMenu.add(clusterBorders);
+		optionsMenu.add(clusterBilans);
+		optionsMenu.add(lostNodesCount);
 
 		JMenuItem help = new JMenuItem("Pomoc?");
 
@@ -63,6 +65,8 @@ public class MainFrame extends JFrame {
 		insideConnectionsCount.addActionListener(e -> graph.changeInConnectionsCount());
 		outsideConnectionsCount.addActionListener(e -> graph.changeOutConnectionsCount());
 		clusterBorders.addActionListener(e -> graph.changeBorderVisibility());
+		clusterBilans.addActionListener(e -> graph.changeClusterBilansVisibility());
+		lostNodesCount.addActionListener(e -> graph.changeLostNodesCountVisibility());
 
 		help.addActionListener(e -> Utils.openWebsite(this,"https://github.com/julian428/JIMP-Projekt-2025-cz3"));
 	}
