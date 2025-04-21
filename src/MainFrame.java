@@ -58,7 +58,7 @@ public class MainFrame extends JFrame {
 			if(selectedFile == null) return;
 			graph.setGraph(this, selectedFile);
 		});
-		saveGraph.addActionListener(e -> JOptionPane.showMessageDialog(this, "Wybór miejsca zapisu i nazwy zdjęcia grafu."));
+		saveGraph.addActionListener(e -> Utils.saveJpanel(this, graph));
 
 		insideConnections.addActionListener(e -> graph.changeInsideConnectionsVisibility());
 		outsideConnections.addActionListener(e -> graph.changeOutsideConnectionsVisibility());
