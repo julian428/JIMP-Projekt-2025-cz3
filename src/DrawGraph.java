@@ -195,13 +195,16 @@ public class DrawGraph extends JPanel {
 			}
 		}catch(IOException e){
 			e.printStackTrace();
+      JOptionPane.showMessageDialog(null, "Błąd przy czytaniu pliku.");
+		}catch(Exception e){
+			e.printStackTrace();
+      JOptionPane.showMessageDialog(null, "Niepoprawny format pliku.");
 		}
 	}
 
 	@Override
 	protected void paintComponent(Graphics g){
 		super.paintComponent(g);
-
 		Graphics2D g2 = (Graphics2D)g;
 		int clusterWidth = maxClusterSize * 50;
 
@@ -279,7 +282,7 @@ public class DrawGraph extends JPanel {
 		int[] lostNodesCount = new int[this.clusterCount]; // ilość wierzchołków które mają więcej połączeń poza swój własny klaster.
 		for(Node node : this.nodes.values()){
 			node.drawNode(g2);
-			if(node.inConnections < node.outConnections) lostNodesCount[node.clusterId]++;
+			if(node.inConnections == 0) lostNodesCount[node.clusterId]++;
 			if(this.showInConnectionsCount) node.drawInConnectionsCount(g2);
 			if(this.showOutConnectionsCount) node.drawOutConnectionsCount(g2);
 		}
