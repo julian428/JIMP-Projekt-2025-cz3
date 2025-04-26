@@ -135,31 +135,85 @@ public class DrawGraph extends JPanel {
         }
     }
 	}
+	
+	private void runGraphGenerator(File file, int clusterCount, double margin) {
+    String path = file.getAbsolutePath();
 
-	private void runGraphGenerator(File file, int clusterCount, double margin){
-		String path = file.getAbsolutePath();
-		try {
-			ProcessBuilder pb = new ProcessBuilder(
-      	"./JIMP-Projekt-2025-cz2/bin/divide_graph",
-      	"-i", path,
-      	"-c", String.valueOf(clusterCount),
-				"-p", String.valueOf(margin)
-      );
-			Process process = pb.start();
-			
+    JDialog loadingDialog = new JDialog((JFrame) SwingUtilities.getWindowAncestor(this), "Generating Graph", true);
+    loadingDialog.setLayout(new BorderLayout());
+    loadingDialog.setSize(300, 150);
+    loadingDialog.setLocationRelativeTo(null);
 
-			int exitCode = process.waitFor();
-      if (exitCode == 0) {
-				File output = new File("clusters.clusters");
-				parseClustersFile(output);
-      } else {
-        JOptionPane.showMessageDialog(null, "Nie udało się wygenerować grafu.");
-      }
-		} catch(IOException | InterruptedException ex) {
-			ex.printStackTrace();
-      JOptionPane.showMessageDialog(null, "Błąd przy uruchamianiu programu.");
-		}
-		
+    JLabel messageLabel = new JLabel("Generowanie grafu...", SwingConstants.CENTER);
+    JLabel timerLabel = new JLabel("Czas generacji: 0s", SwingConstants.CENTER);
+    JButton cancelButton = new JButton("Cancel");
+
+    loadingDialog.add(messageLabel, BorderLayout.NORTH);
+    loadingDialog.add(timerLabel, BorderLayout.CENTER);
+    loadingDialog.add(cancelButton, BorderLayout.SOUTH);
+
+    final boolean[] cancelled = {false};
+
+    final int[] elapsedSeconds = {0};
+    Timer timer = new Timer(1000, e -> {
+        elapsedSeconds[0]++;
+        timerLabel.setText("Czas generacji: " + elapsedSeconds[0] + "s");
+    });
+
+    timer.start();
+
+    cancelButton.addActionListener(e -> {
+        cancelled[0] = true;
+        loadingDialog.dispose();
+    });
+
+    new Thread(() -> {
+        try {
+            ProcessBuilder pb = new ProcessBuilder(
+                "./JIMP-Projekt-2025-cz2/bin/divide_graph",
+                "-i", path,
+                "-c", String.valueOf(clusterCount),
+                "-p", String.valueOf(margin)
+            );
+            Process process = pb.start();
+
+            while (true) {
+                try {
+                    if (process.waitFor(1, java.util.concurrent.TimeUnit.SECONDS)) {
+                        break;
+                    }
+                    if (cancelled[0]) {
+                        process.destroy();
+                        return;
+                    }
+                } catch (InterruptedException ex) {
+                    ex.printStackTrace();
+                }
+            }
+
+            int exitCode = process.exitValue();
+            if (exitCode == 0) {
+                File output = new File("clusters.clusters");
+                parseClustersFile(output);
+            } else {
+                SwingUtilities.invokeLater(() -> 
+                    JOptionPane.showMessageDialog(null, "Nie udało się wygenerować grafu.")
+                );
+            }
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            SwingUtilities.invokeLater(() ->
+                JOptionPane.showMessageDialog(null, "Błąd przy uruchamianiu programu.")
+            );
+        } finally {
+            SwingUtilities.invokeLater(() -> {
+                timer.stop();
+                loadingDialog.dispose();
+            });
+        }
+    }).start();
+
+    loadingDialog.setVisible(true);
 	}
 
 	private void parseClustersFile(File file){
@@ -195,13 +249,16 @@ public class DrawGraph extends JPanel {
 			}
 		}catch(IOException e){
 			e.printStackTrace();
+      JOptionPane.showMessageDialog(null, "Błąd przy czytaniu pliku.");
+		}catch(Exception e){
+			e.printStackTrace();
+      JOptionPane.showMessageDialog(null, "Niepoprawny format pliku.");
 		}
 	}
 
 	@Override
 	protected void paintComponent(Graphics g){
 		super.paintComponent(g);
-
 		Graphics2D g2 = (Graphics2D)g;
 		int clusterWidth = maxClusterSize * 50;
 
@@ -228,6 +285,10 @@ public class DrawGraph extends JPanel {
     for(Node node : this.nodes.values()) {
 			node.clearConnectionsCount();
 			int c = node.clusterId;
+			if(clustersPerRow < 1){
+      	JOptionPane.showMessageDialog(null, "Błąd podczas rysowania grafu.");
+				return;
+			}
 			int row = c % clustersPerRow;
 			int col = c / clustersPerRow;
 
@@ -279,7 +340,7 @@ public class DrawGraph extends JPanel {
 		int[] lostNodesCount = new int[this.clusterCount]; // ilość wierzchołków które mają więcej połączeń poza swój własny klaster.
 		for(Node node : this.nodes.values()){
 			node.drawNode(g2);
-			if(node.inConnections < node.outConnections) lostNodesCount[node.clusterId]++;
+			if(node.inConnections == 0) lostNodesCount[node.clusterId]++;
 			if(this.showInConnectionsCount) node.drawInConnectionsCount(g2);
 			if(this.showOutConnectionsCount) node.drawOutConnectionsCount(g2);
 		}
